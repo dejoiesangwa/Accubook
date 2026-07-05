@@ -74,9 +74,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ClearLedger — Financial Statements Made Simple" },
+      { title: "Accubook — Financial Statements Made Simple" },
       { name: "description", content: "Track income and expenses and automatically generate professional financial reports in minutes. Built for small businesses, startups and freelancers." },
-      { property: "og:title", content: "ClearLedger — Financial Statements Made Simple" },
+      { property: "og:title", content: "Accubook — Financial Statements Made Simple" },
       { property: "og:description", content: "Track income and expenses and automatically generate professional financial reports in minutes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -17,8 +17,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = "clearledger.session";
-const USERS_KEY = "clearledger.users";
+const STORAGE_KEY = "accubook.session";
+const USERS_KEY = "accubook.users";
 
 interface StoredUser extends User {
   passwordHash: string;

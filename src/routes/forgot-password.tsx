@@ -31,7 +31,7 @@ function ForgotPasswordPage() {
           <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white">
             <BarChart3 className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold">ClearLedger</span>
+          <span className="text-lg font-bold">Accubook</span>
         </Link>
         <h1 className="text-2xl font-bold">Reset your password</h1>
         <p className="mt-2 text-sm text-muted-foreground">

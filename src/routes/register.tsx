@@ -28,7 +28,7 @@ function RegisterPage() {
     setLoading(true);
     try {
       await register(name, email, password);
-      toast.success("Account created! Welcome to ClearLedger.");
+      toast.success("Account created! Welcome to Accubook.");
       navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign up failed");
@@ -45,7 +45,7 @@ function RegisterPage() {
             <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white">
               <BarChart3 className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold">ClearLedger</span>
+            <span className="text-lg font-bold">Accubook</span>
           </Link>
           <h1 className="text-2xl font-bold">Create your account</h1>
           <p className="mt-2 text-sm text-muted-foreground">Start cleaning up your books in minutes — free forever.</p>

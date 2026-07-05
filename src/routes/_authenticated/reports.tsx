@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/reports")({
         "Monthly / quarterly / annual presets",
         "Custom date-range reports",
         "One-click PDF & Excel download",
-        "Email directly from ClearLedger",
+        "Email directly from Accubook",
       ]}
     />
   ),

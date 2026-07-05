@@ -41,10 +41,10 @@ function LoginPage() {
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 backdrop-blur">
               <BarChart3 className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold">ClearLedger</span>
+            <span className="text-lg font-bold">Accubook</span>
           </Link>
           <div>
-            <p className="text-3xl font-bold leading-tight">"ClearLedger showed me my real profit for the first time."</p>
+            <p className="text-3xl font-bold leading-tight">"Accubook showed me my real profit for the first time."</p>
             <p className="mt-4 text-white/80">— Aline U., Boutique Owner</p>
           </div>
           <p className="text-xs text-white/60">Local build — your data stays in your browser.</p>
@@ -56,7 +56,7 @@ function LoginPage() {
             <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white">
               <BarChart3 className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold">ClearLedger</span>
+            <span className="text-lg font-bold">Accubook</span>
           </Link>
           <h1 className="text-2xl font-bold">Welcome back</h1>
           <p className="mt-2 text-sm text-muted-foreground">Sign in to your account to continue.</p>
