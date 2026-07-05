@@ -47,7 +47,7 @@ export function AppSidebar() {
           <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg gradient-brand text-white shadow-elegant">
             <BarChart3 className="h-4 w-4" />
           </div>
-          {!collapsed && <span className="text-base font-bold tracking-tight">ClearLedger</span>}
+          {!collapsed && <span className="text-base font-bold tracking-tight">Accubook</span>}
         </Link>
       </SidebarHeader>
 

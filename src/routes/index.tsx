@@ -33,7 +33,7 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Aline U.", role: "Boutique Owner, Kigali", quote: "I stopped using notebooks. ClearLedger showed my real profit for the first time." },
+  { name: "Aline U.", role: "Boutique Owner, Kigali", quote: "I stopped using notebooks. Accubook showed my real profit for the first time." },
   { name: "Jean-Paul M.", role: "Freelance Designer", quote: "Beginner mode made accounting finally click. I generate my P&L in minutes." },
   { name: "Sarah K.", role: "Startup Founder", quote: "The health score and alerts feel like having a CFO on the team." },
 ];
@@ -45,7 +45,7 @@ const plans = [
 ];
 
 const faqs = [
-  { q: "Do I need accounting knowledge?", a: "No. ClearLedger has a Beginner Mode that replaces terms like Assets with 'What You Own'. Anyone can use it." },
+  { q: "Do I need accounting knowledge?", a: "No. Accubook has a Beginner Mode that replaces terms like Assets with 'What You Own'. Anyone can use it." },
   { q: "Is my data safe?", a: "Yes. All data stays in your browser storage in this local build. No cloud sync, no third-party servers." },
   { q: "Can I export my reports?", a: "Absolutely. Every statement can be downloaded as PDF or Excel, or printed directly." },
   { q: "Can I manage multiple businesses?", a: "Yes. Create as many businesses as your plan allows and switch between them instantly." },
@@ -66,7 +66,7 @@ function Nav() {
             <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand shadow-elegant">
               <BarChart3 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight">ClearLedger</span>
+            <span className="text-lg font-bold tracking-tight">Accubook</span>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
             {links.map(([label, href]) => (
@@ -254,7 +254,7 @@ function InnovativeSection() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">What makes us different</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Easier than Excel. Smarter than QuickBooks.</h2>
-            <p className="mt-4 text-muted-foreground">ClearLedger isn't just software that stores numbers — it explains them, coaches you, and grows with your business.</p>
+            <p className="mt-4 text-muted-foreground">Accubook isn't just software that stores numbers — it explains them, coaches you, and grows with your business.</p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {items.map((it) => (
                 <div key={it.title} className="rounded-xl border border-border bg-card p-4 shadow-soft">
@@ -403,13 +403,13 @@ function CTA() {
           <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 20% 20%, white 0, transparent 40%), radial-gradient(circle at 80% 80%, white 0, transparent 40%)" }} />
           <div className="relative">
             <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to clean up your books?</h2>
-            <p className="mx-auto mt-4 max-w-xl text-white/80">Join hundreds of small businesses running clearer, calmer finances with ClearLedger.</p>
+            <p className="mx-auto mt-4 max-w-xl text-white/80">Join hundreds of small businesses running clearer, calmer finances with Accubook.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90">
                 <Link to="/register">Start Free <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10">
-                <a href="mailto:hello@clearledger.app">Contact Sales</a>
+                <a href="mailto:hello@accubook.app">Contact Sales</a>
               </Button>
             </div>
           </div>
@@ -429,7 +429,7 @@ function Footer() {
               <div className="grid h-9 w-9 place-items-center rounded-xl gradient-brand shadow-elegant">
                 <BarChart3 className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold">ClearLedger</span>
+              <span className="text-lg font-bold">Accubook</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">Financial statements made simple. Built for the next generation of small businesses.</p>
           </div>
@@ -449,7 +449,7 @@ function Footer() {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ClearLedger. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Accubook. All rights reserved.</p>
           <p className="text-xs text-muted-foreground">Built for small businesses in Africa & beyond.</p>
         </div>
       </div>

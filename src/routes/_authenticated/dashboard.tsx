@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 import {
-  TrendingUp, TrendingDown, Wallet, DollarSign, ArrowUpRight, ArrowDownRight,
-  Plus, FileText, Download, Sparkles, ShieldCheck,
+  TrendingUp, Wallet, DollarSign, ArrowUpRight, ArrowDownRight,
+  Plus, FileText, Sparkles, ShieldCheck, Receipt,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -10,46 +11,25 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useStore, formatMoney } from "@/lib/store";
+import { useSettings } from "@/lib/settings";
+import { healthScore, monthlyBreakdown } from "@/lib/statements";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const trendData = [
-  { month: "Apr", income: 12500, expenses: 8200 },
-  { month: "May", income: 15200, expenses: 9100 },
-  { month: "Jun", income: 18400, expenses: 10800 },
-  { month: "Jul", income: 17200, expenses: 11200 },
-  { month: "Aug", income: 21500, expenses: 12500 },
-  { month: "Sep", income: 24800, expenses: 13800 },
-  { month: "Oct", income: 28200, expenses: 15200 },
-];
-
-const cashFlowData = trendData.map((d) => ({ month: d.month, net: d.income - d.expenses }));
-
-const expenseData = [
-  { name: "Salaries", value: 6800, color: "oklch(0.52 0.19 258)" },
-  { name: "Rent", value: 3200, color: "oklch(0.68 0.16 158)" },
-  { name: "Transport", value: 1900, color: "oklch(0.72 0.15 220)" },
-  { name: "Supplies", value: 1600, color: "oklch(0.78 0.15 75)" },
-  { name: "Other", value: 1700, color: "oklch(0.6 0.05 258)" },
-];
-
-const recentTransactions = [
-  { id: 1, desc: "Client payment — Acme Ltd", cat: "Sales", amount: 4500, type: "income", date: "Oct 12" },
-  { id: 2, desc: "Office rent — October", cat: "Rent", amount: 1200, type: "expense", date: "Oct 10" },
-  { id: 3, desc: "Design services", cat: "Sales", amount: 2200, type: "income", date: "Oct 09" },
-  { id: 4, desc: "Team lunch", cat: "Meals", amount: 180, type: "expense", date: "Oct 08" },
-  { id: 5, desc: "Software subscriptions", cat: "Software", amount: 420, type: "expense", date: "Oct 07" },
+const PIE_COLORS = [
+  "oklch(0.52 0.19 258)", "oklch(0.68 0.16 158)", "oklch(0.72 0.15 220)",
+  "oklch(0.78 0.15 75)", "oklch(0.6 0.05 258)",
 ];
 
 function KpiCard({ icon: Icon, label, value, change, positive, gradient }: {
-  icon: any; label: string; value: string; change: string; positive: boolean; gradient?: boolean;
+  icon: any; label: string; value: string; change?: string; positive?: boolean; gradient?: boolean;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:shadow-elegant"
     >
       <div className="flex items-start justify-between">
@@ -61,67 +41,111 @@ function KpiCard({ icon: Icon, label, value, change, positive, gradient }: {
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <div className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-        {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-        {change}
-      </div>
+      {change !== undefined && (
+        <div className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+          {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+          {change}
+        </div>
+      )}
     </motion.div>
   );
 }
 
 function Dashboard() {
   const { user } = useAuth();
+  const { transactions, activeBusiness, seedDemo } = useStore();
+  const { currency } = useSettings();
   const firstName = user?.name.split(" ")[0] ?? "there";
+
+  const trend = useMemo(() => monthlyBreakdown(transactions, 7), [transactions]);
+  const health = useMemo(() => healthScore(transactions), [transactions]);
+
+  const totals = useMemo(() => {
+    const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const expense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    return { income, expense, net: income - expense };
+  }, [transactions]);
+
+  const growth = useMemo(() => {
+    if (trend.length < 2) return 0;
+    const prev = trend[trend.length - 2].income;
+    const curr = trend[trend.length - 1].income;
+    return prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+  }, [trend]);
+
+  const expensePie = useMemo(() => {
+    const map: Record<string, number> = {};
+    transactions.filter((t) => t.type === "expense").forEach((t) => { map[t.category] = (map[t.category] ?? 0) + t.amount; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  }, [transactions]);
+
+  const recent = useMemo(
+    () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
+    [transactions]
+  );
+
+  const empty = transactions.length === 0;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Welcome back, {firstName} 👋</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Here's how your business is doing today.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {activeBusiness?.name} · Here's how your business is doing today.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="gap-2"><Download className="h-4 w-4" /> Export PDF</Button>
-          <Button variant="outline" size="sm" className="gap-2"><FileText className="h-4 w-4" /> Generate Statement</Button>
-          <Button size="sm" className="gap-2 gradient-brand text-white hover:opacity-95"><Plus className="h-4 w-4" /> Add Transaction</Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/statements"><FileText className="h-4 w-4" /> Statements</Link>
+          </Button>
+          <Button asChild size="sm" className="gap-2 gradient-brand text-white hover:opacity-95">
+            <Link to="/transactions"><Plus className="h-4 w-4" /> Add Transaction</Link>
+          </Button>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <KpiCard icon={DollarSign} label="Total Revenue" value="$137,800" change="+13.6%" positive />
-        <KpiCard icon={Wallet} label="Total Expenses" value="$80,800" change="+8.2%" positive={false} />
-        <KpiCard icon={TrendingUp} label="Net Profit" value="$57,000" change="+22.4%" positive gradient />
-        <KpiCard icon={DollarSign} label="Cash Balance" value="$42,150" change="+4.1%" positive gradient />
-        <KpiCard icon={TrendingUp} label="Monthly Growth" value="18.2%" change="+3.4%" positive />
+      {empty && (
+        <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center">
+          <Sparkles className="mx-auto h-6 w-6 text-primary" />
+          <p className="mt-2 font-semibold">Welcome to Accubook</p>
+          <p className="text-sm text-muted-foreground">Add your first transaction, or load some demo data to explore.</p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="outline" size="sm" onClick={seedDemo}>Load demo data</Button>
+            <Button asChild size="sm" className="gradient-brand text-white hover:opacity-95">
+              <Link to="/transactions">Add transaction</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard icon={DollarSign} label="Total Revenue" value={formatMoney(totals.income, currency)}
+          change={`${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%`} positive={growth >= 0} />
+        <KpiCard icon={Wallet} label="Total Expenses" value={formatMoney(totals.expense, currency)} />
+        <KpiCard icon={TrendingUp} label="Net Profit" value={formatMoney(totals.net, currency)}
+          change={totals.net >= 0 ? "Profitable" : "Loss"} positive={totals.net >= 0} gradient />
+        <KpiCard icon={ShieldCheck} label="Health Score" value={`${health.score}/100`} change={health.label} positive={health.score >= 70} gradient />
       </div>
 
-      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold">Income vs Expenses</h2>
-              <p className="text-xs text-muted-foreground">Last 7 months</p>
-            </div>
+          <div className="mb-4">
+            <h2 className="font-semibold">Income vs Expenses</h2>
+            <p className="text-xs text-muted-foreground">Last 7 months</p>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
+              <AreaChart data={trend}>
                 <defs>
-                  <linearGradient id="inc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.52 0.19 258)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="oklch(0.52 0.19 258)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="exp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.68 0.16 158)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="oklch(0.68 0.16 158)" stopOpacity={0} />
-                  </linearGradient>
+                  <linearGradient id="inc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="oklch(0.52 0.19 258)" stopOpacity={0.35} /><stop offset="100%" stopColor="oklch(0.52 0.19 258)" stopOpacity={0} /></linearGradient>
+                  <linearGradient id="exp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="oklch(0.68 0.16 158)" stopOpacity={0.35} /><stop offset="100%" stopColor="oklch(0.68 0.16 158)" stopOpacity={0} /></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.012 250)" vertical={false} />
-                <XAxis dataKey="month" stroke="oklch(0.5 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="oklch(0.5 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.92 0.012 250)", background: "white" }} />
+                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.92 0.012 250)" }} formatter={(v: any) => formatMoney(Number(v), currency)} />
                 <Area type="monotone" dataKey="income" stroke="oklch(0.52 0.19 258)" strokeWidth={2} fill="url(#inc)" />
                 <Area type="monotone" dataKey="expenses" stroke="oklch(0.68 0.16 158)" strokeWidth={2} fill="url(#exp)" />
               </AreaChart>
@@ -131,50 +155,54 @@ function Dashboard() {
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
           <h2 className="font-semibold">Expense Categories</h2>
-          <p className="text-xs text-muted-foreground">This month</p>
-          <div className="mt-2 h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={expenseData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                  {expenseData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {expenseData.map((e) => (
-              <div key={e.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ background: e.color }} />
-                  <span>{e.name}</span>
-                </div>
-                <span className="font-medium">${e.value.toLocaleString()}</span>
+          <p className="text-xs text-muted-foreground">All-time · top 5</p>
+          {expensePie.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">No expenses yet.</p>
+          ) : (
+            <>
+              <div className="mt-2 h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={expensePie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={80} paddingAngle={2}>
+                      {expensePie.map((e, i) => <Cell key={i} fill={e.color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => formatMoney(Number(v), currency)} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="mt-2 space-y-1.5">
+                {expensePie.map((e) => (
+                  <div key={e.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ background: e.color }} />
+                      <span>{e.name}</span>
+                    </div>
+                    <span className="font-medium">{formatMoney(e.value, currency)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Cash flow */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
           <h2 className="font-semibold">Cash Flow Trend</h2>
           <p className="text-xs text-muted-foreground">Net (income − expenses)</p>
           <div className="mt-4 h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cashFlowData}>
+              <BarChart data={trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.012 250)" vertical={false} />
-                <XAxis dataKey="month" stroke="oklch(0.5 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="oklch(0.5 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.92 0.012 250)", background: "white" }} />
+                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.92 0.012 250)" }} formatter={(v: any) => formatMoney(Number(v), currency)} />
                 <Bar dataKey="net" fill="oklch(0.52 0.19 258)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Health score */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-success" />
@@ -184,66 +212,50 @@ function Dashboard() {
             <div className="relative h-32 w-32">
               <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
                 <circle cx="50" cy="50" r="42" stroke="oklch(0.92 0.012 250)" strokeWidth="8" fill="none" />
-                <circle cx="50" cy="50" r="42" stroke="oklch(0.68 0.16 158)" strokeWidth="8" fill="none"
-                  strokeDasharray={`${2 * Math.PI * 42}`} strokeDashoffset={`${2 * Math.PI * 42 * (1 - 0.92)}`}
-                  strokeLinecap="round" />
+                <circle cx="50" cy="50" r="42" stroke={health.score >= 70 ? "oklch(0.68 0.16 158)" : health.score >= 50 ? "oklch(0.78 0.15 75)" : "oklch(0.65 0.2 20)"} strokeWidth="8" fill="none"
+                  strokeDasharray={`${2 * Math.PI * 42}`} strokeDashoffset={`${2 * Math.PI * 42 * (1 - health.score / 100)}`} strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 grid place-items-center">
                 <div className="text-center">
-                  <p className="text-3xl font-bold">92</p>
+                  <p className="text-3xl font-bold">{health.score}</p>
                   <p className="text-[10px] uppercase text-muted-foreground">/ 100</p>
                 </div>
               </div>
             </div>
-            <p className="mt-3 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">Excellent</p>
-            <p className="mt-3 text-center text-xs text-muted-foreground">Your cash flow is healthy and expenses are under control.</p>
+            <p className="mt-3 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{health.label}</p>
+            <p className="mt-3 text-center text-xs text-muted-foreground">{health.reason}</p>
           </div>
         </div>
       </div>
 
-      {/* Smart insights + recent transactions */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Recent Transactions</h2>
-            <Button variant="ghost" size="sm">View all</Button>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold">Recent Transactions</h2>
+          <Button asChild variant="ghost" size="sm"><Link to="/transactions">View all</Link></Button>
+        </div>
+        {recent.length === 0 ? (
+          <div className="grid place-items-center gap-2 py-8 text-center">
+            <Receipt className="h-6 w-6 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No transactions yet.</p>
           </div>
+        ) : (
           <div className="divide-y divide-border">
-            {recentTransactions.map((t) => (
+            {recent.map((t) => (
               <div key={t.id} className="flex items-center gap-3 py-3">
                 <div className={`grid h-9 w-9 place-items-center rounded-lg ${t.type === "income" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                   {t.type === "income" ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{t.desc}</p>
-                  <p className="text-xs text-muted-foreground">{t.cat} · {t.date}</p>
+                  <p className="truncate text-sm font-medium">{t.description}</p>
+                  <p className="text-xs text-muted-foreground">{t.category} · {t.date}</p>
                 </div>
                 <p className={`text-sm font-semibold ${t.type === "income" ? "text-success" : "text-foreground"}`}>
-                  {t.type === "income" ? "+" : "−"}${t.amount.toLocaleString()}
+                  {t.type === "income" ? "+" : "−"}{formatMoney(t.amount, currency)}
                 </p>
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="font-semibold">Smart Insights</h2>
-          </div>
-          <div className="mt-4 space-y-3">
-            {[
-              { tag: "Insight", tone: "bg-primary/10 text-primary", text: "Expenses grew 18% this month, mostly in Transport." },
-              { tag: "Good", tone: "bg-success/10 text-success", text: "Your net margin (32%) is above your industry average." },
-              { tag: "Watch", tone: "bg-warning/10 text-warning-foreground", text: "3 recurring invoices are overdue — chase them today." },
-            ].map((m, i) => (
-              <div key={i} className="rounded-xl border border-border bg-muted/30 p-3">
-                <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${m.tone}`}>{m.tag}</span>
-                <p className="mt-2 text-sm">{m.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
